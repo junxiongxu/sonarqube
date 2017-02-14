@@ -44,6 +44,8 @@ public class ProjectDefinition {
 
   public static final String TESTS_PROPERTY = "sonar.tests";
 
+  public static final String ANALYZE_AGGREGATORS_PROPERTY = "sonar.analyzeAggregators";
+
   private static final char SEPARATOR = ',';
 
   private File baseDir;
@@ -347,6 +349,10 @@ public class ProjectDefinition {
       result.add(StringUtils.trim(s));
     }
     return result;
+  }
+
+  public boolean shouldAnalyzeAggregators() {
+    return "true".equals(properties.getOrDefault(ANALYZE_AGGREGATORS_PROPERTY, ""));
   }
 
   @Override

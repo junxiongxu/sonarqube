@@ -82,8 +82,8 @@ public class ProjectReactorBuilder {
    *
    * @since 1.5
    */
-  private static final String PROPERTY_SOURCES = "sonar.sources";
-  private static final String PROPERTY_TESTS = "sonar.tests";
+  private static final String PROPERTY_SOURCES = ProjectDefinition.SOURCES_PROPERTY;
+  private static final String PROPERTY_TESTS = ProjectDefinition.TESTS_PROPERTY;
 
   /**
    * Array of all mandatory properties required for a project without child.
@@ -333,7 +333,9 @@ public class ProjectReactorBuilder {
     if (project.getSubProjects().isEmpty()) {
       cleanAndCheckModuleProperties(project);
     } else {
-      cleanAndCheckAggregatorProjectProperties(project);
+      if (!project.shouldAnalyzeAggregators()) {
+        cleanAndCheckAggregatorProjectProperties(project);
+      }
 
       // clean modules properties as well
       for (ProjectDefinition module : project.getSubProjects()) {
