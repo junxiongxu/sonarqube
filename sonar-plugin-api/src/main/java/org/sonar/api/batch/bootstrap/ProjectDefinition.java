@@ -44,8 +44,6 @@ public class ProjectDefinition {
 
   public static final String TESTS_PROPERTY = "sonar.tests";
 
-  public static final String BUILD_DIR_PROPERTY = "sonar.buildDir";
-
   private static final char SEPARATOR = ',';
 
   private File baseDir;
