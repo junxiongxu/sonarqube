@@ -100,7 +100,7 @@ public class FileIndexer {
   }
 
   void index(DefaultModuleFileSystem fileSystem) {
-    if (!shouldAnalyzeParentModules && isAggregator) {
+    if (isAggregator && !shouldAnalyzeParentModules) {
       // No indexing for an aggregator module
       return;
     }
