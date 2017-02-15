@@ -44,7 +44,7 @@ public class ProjectDefinition {
 
   public static final String TESTS_PROPERTY = "sonar.tests";
 
-  public static final String ANALYZE_AGGREGATORS_PROPERTY = "sonar.analyzeAggregators";
+  public static final String ANALYZE_PARENT_MODULES_PROPERTY = "sonar.analyzeParentModules";
 
   private static final char SEPARATOR = ',';
 
@@ -351,8 +351,8 @@ public class ProjectDefinition {
     return result;
   }
 
-  public boolean shouldAnalyzeAggregators() {
-    return "true".equals(properties.getOrDefault(ANALYZE_AGGREGATORS_PROPERTY, ""));
+  public boolean shouldAnalyzeParentModules() {
+    return "true".equals(properties.getOrDefault(ANALYZE_PARENT_MODULES_PROPERTY, ""));
   }
 
   @Override

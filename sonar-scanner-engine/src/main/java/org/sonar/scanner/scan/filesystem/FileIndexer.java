@@ -68,7 +68,7 @@ public class FileIndexer {
   private static final Logger LOG = LoggerFactory.getLogger(FileIndexer.class);
   private final InputFileFilter[] filters;
   private final boolean isAggregator;
-  private final boolean shouldAnalyzeAggregators;
+  private final boolean shouldAnalyzeParentModules;
   private final ExclusionFilters exclusionFilters;
   private final InputFileBuilder inputFileBuilder;
   private final DefaultComponentTree componentTree;
@@ -91,7 +91,7 @@ public class FileIndexer {
     this.exclusionFilters = exclusionFilters;
     this.tasks = new ArrayList<>();
     this.isAggregator = !def.getSubProjects().isEmpty();
-    this.shouldAnalyzeAggregators = def.shouldAnalyzeAggregators();
+    this.shouldAnalyzeParentModules = def.shouldAnalyzeParentModules();
   }
 
   public FileIndexer(BatchIdGenerator batchIdGenerator, InputComponentStore componentStore, DefaultInputModule module, ExclusionFilters exclusionFilters,
@@ -100,7 +100,7 @@ public class FileIndexer {
   }
 
   void index(DefaultModuleFileSystem fileSystem) {
-    if (!shouldAnalyzeAggregators && isAggregator) {
+    if (!shouldAnalyzeParentModules && isAggregator) {
       // No indexing for an aggregator module
       return;
     }

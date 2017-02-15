@@ -333,7 +333,7 @@ public class ProjectReactorBuilder {
     if (project.getSubProjects().isEmpty()) {
       cleanAndCheckModuleProperties(project);
     } else {
-      if (!project.shouldAnalyzeAggregators()) {
+      if (!project.shouldAnalyzeParentModules()) {
         cleanAndCheckAggregatorProjectProperties(project);
       }
 
