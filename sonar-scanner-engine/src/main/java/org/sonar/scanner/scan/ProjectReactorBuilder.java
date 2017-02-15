@@ -335,6 +335,8 @@ public class ProjectReactorBuilder {
     } else {
       if (!project.shouldAnalyzeParentModules()) {
         cleanAndCheckAggregatorProjectProperties(project);
+      } else {
+        cleanAndCheckModuleProperties(project);
       }
 
       // clean modules properties as well
