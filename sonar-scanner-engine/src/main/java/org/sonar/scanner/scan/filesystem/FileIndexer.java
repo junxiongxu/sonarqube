@@ -55,6 +55,7 @@ import org.sonar.api.scan.filesystem.PathResolver;
 import org.sonar.api.batch.fs.InputFileFilter;
 import org.sonar.api.utils.MessageException;
 import org.sonar.scanner.scan.DefaultComponentTree;
+import org.sonar.scanner.scan.ProjectReactorBuilder;
 import org.sonar.scanner.util.ProgressReport;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -91,7 +92,7 @@ public class FileIndexer {
     this.exclusionFilters = exclusionFilters;
     this.tasks = new ArrayList<>();
     this.isAggregator = !def.getSubProjects().isEmpty();
-    this.shouldAnalyzeParentModules = def.shouldAnalyzeParentModules();
+    this.shouldAnalyzeParentModules = ProjectReactorBuilder.shouldAnalyzeParentModules(def);
   }
 
   public FileIndexer(BatchIdGenerator batchIdGenerator, InputComponentStore componentStore, DefaultInputModule module, ExclusionFilters exclusionFilters,

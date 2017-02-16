@@ -86,6 +86,11 @@ public class ProjectReactorBuilder {
   private static final String PROPERTY_TESTS = ProjectDefinition.TESTS_PROPERTY;
 
   /**
+   * @since 6.4
+   */
+  private static final String ANALYZE_PARENT_MODULES_PROPERTY = "sonar.analyzeParentModules";
+
+  /**
    * Array of all mandatory properties required for a project without child.
    */
   private static final String[] MANDATORY_PROPERTIES_FOR_SIMPLE_PROJECT = {
@@ -333,7 +338,7 @@ public class ProjectReactorBuilder {
     if (project.getSubProjects().isEmpty()) {
       cleanAndCheckModuleProperties(project);
     } else {
-      if (!project.shouldAnalyzeParentModules()) {
+      if (!shouldAnalyzeParentModules(project)) {
         cleanAndCheckAggregatorProjectProperties(project);
       } else {
         cleanAndCheckModuleProperties(project);
@@ -344,6 +349,10 @@ public class ProjectReactorBuilder {
         cleanAndCheckProjectDefinitions(module);
       }
     }
+  }
+
+  public static boolean shouldAnalyzeParentModules(ProjectDefinition projectDefinition) {
+    return "true".equals(projectDefinition.properties().getOrDefault(ANALYZE_PARENT_MODULES_PROPERTY, ""));
   }
 
   @VisibleForTesting

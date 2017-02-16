@@ -46,8 +46,6 @@ public class ProjectDefinition {
 
   public static final String BUILD_DIR_PROPERTY = "sonar.buildDir";
 
-  private static final String ANALYZE_PARENT_MODULES_PROPERTY = "sonar.analyzeParentModules";
-
   private static final char SEPARATOR = ',';
 
   private File baseDir;
@@ -351,10 +349,6 @@ public class ProjectDefinition {
       result.add(StringUtils.trim(s));
     }
     return result;
-  }
-
-  public boolean shouldAnalyzeParentModules() {
-    return "true".equals(properties.getOrDefault(ANALYZE_PARENT_MODULES_PROPERTY, ""));
   }
 
   @Override
