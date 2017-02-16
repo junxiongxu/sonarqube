@@ -26,12 +26,17 @@ public class ProjectsWsParameters {
   public static final String ACTION_CREATE = "create";
   public static final String ACTION_INDEX = "index";
   public static final String ACTION_UPDATE_KEY = "update_key";
+  public static final String ACTION_BULK_UPDATE_KEY = "bulk_update_key";
 
   public static final String PARAM_PROJECT = "project";
   public static final String PARAM_PROJECT_ID = "projectId";
   public static final String PARAM_NEW_PROJECT = "newProject";
   public static final String PARAM_NAME = "name";
   public static final String PARAM_BRANCH = "branch";
+  public static final String PARAM_FROM = "from";
+  public static final String PARAM_TO = "to";
+  public static final String PARAM_DRY_RUN = "dryRun";
+
 
   private ProjectsWsParameters() {
     // static utils only

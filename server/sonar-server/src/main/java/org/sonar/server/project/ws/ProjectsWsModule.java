@@ -32,6 +32,7 @@ public class ProjectsWsModule extends Module {
       BulkDeleteAction.class,
       DeleteAction.class,
       UpdateKeyAction.class,
+      BulkUpdateKeyAction.class,
       GhostsAction.class,
       ProvisionedAction.class,
       SearchMyProjectsAction.class,
