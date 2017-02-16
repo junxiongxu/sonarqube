@@ -20,6 +20,7 @@
 
 package org.sonar.server.project.ws;
 
+import org.sonar.api.server.ws.Changelog;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
@@ -50,6 +51,10 @@ public class UpdateKeyAction implements ProjectsWsAction {
 
   @Override
   public void define(WebService.NewController context) {
+    doDefine(context);
+  }
+
+  public WebService.NewAction doDefine(WebService.NewController context) {
     WebService.NewAction action = context.createAction(ACTION_UPDATE_KEY)
       .setDescription("Update a project or module key and all its sub-components keys.<br>" +
         "Either '%s' or '%s' must be provided, not both.<br> " +
@@ -62,6 +67,9 @@ public class UpdateKeyAction implements ProjectsWsAction {
       .setSince("6.1")
       .setPost(true)
       .setHandler(this);
+
+    action.setHistory(
+      new Changelog("6.4", "Move from api/components/update_key to api/projects/update_key"));
 
     action.createParam(PARAM_PROJECT_ID)
       .setDescription("Project or module id")
@@ -78,6 +86,8 @@ public class UpdateKeyAction implements ProjectsWsAction {
       .setRequired(true)
       .setDeprecatedKey("newKey", "6.4")
       .setExampleValue("my_new_project");
+
+    return action;
   }
 
   @Override

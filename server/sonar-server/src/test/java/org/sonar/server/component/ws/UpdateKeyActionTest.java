@@ -23,6 +23,8 @@ import javax.annotation.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.sonar.api.server.ws.Request;
+import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.api.server.ws.WebService.Param;
 import org.sonar.api.utils.System2;
@@ -33,7 +35,6 @@ import org.sonar.db.component.ComponentDbTester;
 import org.sonar.db.component.ComponentDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.component.ComponentService;
-import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.ws.TestRequest;
 import org.sonar.server.ws.WsActionTester;
 
@@ -41,11 +42,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.sonar.db.component.ComponentTesting.newProjectDto;
 import static org.sonarqube.ws.client.component.ComponentsWsParameters.PARAM_NEW_PROJECT;
 import static org.sonarqube.ws.client.component.ComponentsWsParameters.PARAM_PROJECT;
-import static org.sonarqube.ws.client.component.ComponentsWsParameters.PARAM_PROJECT_ID;
 
 public class UpdateKeyActionTest {
   private static final String ANOTHER_KEY = "another_key";
@@ -57,57 +58,18 @@ public class UpdateKeyActionTest {
   DbClient dbClient = db.getDbClient();
 
   ComponentService componentService = mock(ComponentService.class);
+  org.sonar.server.project.ws.UpdateKeyAction action = spy(new org.sonar.server.project.ws.UpdateKeyAction(dbClient, new ComponentFinder(dbClient), componentService));
 
-  WsActionTester ws = new WsActionTester(new UpdateKeyAction(dbClient, new ComponentFinder(dbClient), componentService));
+  WsActionTester ws = new WsActionTester(new UpdateKeyAction(action));
 
   @Test
-  public void call_by_key() {
+  public void call() throws Exception {
     ComponentDto project = insertProject();
 
     callByKey(project.key(), ANOTHER_KEY);
 
+    verify(action).handle(any(Request.class), any(Response.class));
     assertCallComponentService(ANOTHER_KEY);
-  }
-
-  @Test
-  public void call_by_uuid() {
-    ComponentDto project = insertProject();
-
-    callByUuid(project.uuid(), ANOTHER_KEY);
-
-    assertCallComponentService(ANOTHER_KEY);
-  }
-
-  @Test
-  public void fail_if_new_key_is_not_provided() {
-    expectedException.expect(IllegalArgumentException.class);
-
-    ComponentDto project = insertProject();
-
-    callByKey(project.key(), null);
-  }
-
-  @Test
-  public void fail_if_uuid_nor_key_provided() {
-    expectedException.expect(IllegalArgumentException.class);
-
-    call(null, null, ANOTHER_KEY);
-  }
-
-  @Test
-  public void fail_if_uuid_and_key_provided() {
-    expectedException.expect(IllegalArgumentException.class);
-
-    ComponentDto project = insertProject();
-
-    call(project.uuid(), project.key(), ANOTHER_KEY);
-  }
-
-  @Test
-  public void fail_if_project_does_not_exist() {
-    expectedException.expect(NotFoundException.class);
-
-    callByUuid("UNKNOWN_UUID", ANOTHER_KEY);
   }
 
   @Test
@@ -121,6 +83,9 @@ public class UpdateKeyActionTest {
       .hasSize(3)
       .extracting(Param::key)
       .containsOnlyOnce("projectId", "project", "newProject");
+
+    assertThat(definition.description()).isEqualTo("See api/projects/update_key");
+    assertThat(definition.deprecatedSince()).isEqualTo("6.4");
   }
 
   private void assertCallComponentService(@Nullable String newKey) {
@@ -131,20 +96,13 @@ public class UpdateKeyActionTest {
     return componentDb.insertComponent(newProjectDto(db.organizations().insert()));
   }
 
-  private String callByUuid(@Nullable String uuid, @Nullable String newKey) {
-    return call(uuid, null, newKey);
-  }
-
   private String callByKey(@Nullable String key, @Nullable String newKey) {
-    return call(null, key, newKey);
+    return call(key, newKey);
   }
 
-  private String call(@Nullable String uuid, @Nullable String key, @Nullable String newKey) {
+  private String call(@Nullable String key, @Nullable String newKey) {
     TestRequest request = ws.newRequest();
 
-    if (uuid != null) {
-      request.setParam(PARAM_PROJECT_ID, uuid);
-    }
     if (key != null) {
       request.setParam(PARAM_PROJECT, key);
     }

@@ -34,7 +34,6 @@ import org.sonar.db.component.ComponentDbTester;
 import org.sonar.db.component.ComponentDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.component.ComponentService;
-import org.sonar.server.component.ws.UpdateKeyAction;
 import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.ws.TestRequest;
 import org.sonar.server.ws.WsActionTester;
@@ -60,7 +59,7 @@ public class UpdateKeyActionTest {
 
   ComponentService componentService = mock(ComponentService.class);
 
-  WsActionTester ws = new WsActionTester(new UpdateKeyAction(dbClient, new ComponentFinder(dbClient), componentService));
+  WsActionTester ws = new WsActionTester(new org.sonar.server.project.ws.UpdateKeyAction(dbClient, new ComponentFinder(dbClient), componentService));
 
   @Test
   public void call_by_key() {
