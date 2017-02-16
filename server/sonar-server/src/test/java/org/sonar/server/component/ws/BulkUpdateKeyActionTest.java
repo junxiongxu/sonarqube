@@ -27,6 +27,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonar.api.config.MapSettings;
+import org.sonar.api.server.ws.Request;
+import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.api.utils.System2;
 import org.sonar.db.DbClient;
@@ -34,14 +36,10 @@ import org.sonar.db.DbSession;
 import org.sonar.db.DbTester;
 import org.sonar.db.component.ComponentDbTester;
 import org.sonar.db.component.ComponentDto;
-import org.sonar.db.organization.OrganizationDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.component.ComponentService;
 import org.sonar.server.component.index.ComponentIndexDefinition;
 import org.sonar.server.es.EsTester;
-import org.sonar.server.exceptions.BadRequestException;
-import org.sonar.server.exceptions.ForbiddenException;
-import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.measure.index.ProjectMeasuresIndexDefinition;
 import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.ws.TestRequest;
@@ -56,11 +54,11 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.sonar.db.component.ComponentTesting.newFileDto;
 import static org.sonar.db.component.ComponentTesting.newModuleDto;
 import static org.sonar.db.component.ComponentTesting.newProjectDto;
-import static org.sonar.test.JsonAssert.assertJson;
 import static org.sonarqube.ws.client.component.ComponentsWsParameters.PARAM_DRY_RUN;
 import static org.sonarqube.ws.client.component.ComponentsWsParameters.PARAM_FROM;
 import static org.sonarqube.ws.client.component.ComponentsWsParameters.PARAM_PROJECT;
@@ -88,8 +86,9 @@ public class BulkUpdateKeyActionTest {
   private DbClient dbClient = db.getDbClient();
   private ComponentFinder componentFinder = new ComponentFinder(dbClient);
   private ComponentService componentService = mock(ComponentService.class);
-  private WsActionTester ws = new WsActionTester(
-    new BulkUpdateKeyAction(dbClient, componentFinder, componentService, userSession));
+  private org.sonar.server.project.ws.BulkUpdateKeyAction action = spy(
+    new org.sonar.server.project.ws.BulkUpdateKeyAction(dbClient, componentFinder, componentService, userSession));
+  private WsActionTester ws = new WsActionTester(new BulkUpdateKeyAction(action));
 
   @Before
   public void setUp() {
@@ -97,42 +96,12 @@ public class BulkUpdateKeyActionTest {
   }
 
   @Test
-  public void json_example() {
-    OrganizationDto organizationDto = db.organizations().insert();
-    ComponentDto project = componentDb.insertComponent(newProjectDto(organizationDto).setKey("my_project"));
-    componentDb.insertComponent(newModuleDto(project).setKey("my_project:module_1"));
-    ComponentDto anotherProject = componentDb.insertComponent(newProjectDto(organizationDto).setKey("another_project"));
-    componentDb.insertComponent(newModuleDto(anotherProject).setKey("my_new_project:module_1"));
-    ComponentDto module2 = componentDb.insertComponent(newModuleDto(project).setKey("my_project:module_2"));
-    componentDb.insertComponent(newFileDto(module2, null));
-
-    String result = ws.newRequest()
-      .setParam(PARAM_PROJECT, "my_project")
-      .setParam(PARAM_FROM, "my_")
-      .setParam(PARAM_TO, "my_new_")
-      .setParam(PARAM_DRY_RUN, String.valueOf(true))
-      .execute().getInput();
-
-    assertJson(result).withStrictArrayOrder().isSimilarTo(getClass().getResource("bulk_update_key-example.json"));
-  }
-
-  @Test
-  public void dry_run_by_key() {
-    insertMyProject();
-
-    BulkUpdateKeyWsResponse result = callDryRunByKey(MY_PROJECT_KEY, FROM, TO);
-
-    assertThat(result.getKeysCount()).isEqualTo(1);
-    assertThat(result.getKeys(0).getNewKey()).isEqualTo("your_project");
-  }
-
-  @Test
-  public void bulk_update_project_key() {
+  public void bulk_update_project_key() throws Exception {
     ComponentDto project = insertMyProject();
     ComponentDto module = componentDb.insertComponent(newModuleDto(project).setKey("my_project:root:module"));
-    ComponentDto inactiveModule = componentDb.insertComponent(newModuleDto(project).setKey("my_project:root:inactive_module").setEnabled(false));
-    ComponentDto file = componentDb.insertComponent(newFileDto(module, null).setKey("my_project:root:module:src/File.xoo"));
-    ComponentDto inactiveFile = componentDb.insertComponent(newFileDto(module, null).setKey("my_project:root:module:src/InactiveFile.xoo").setEnabled(false));
+    componentDb.insertComponent(newModuleDto(project).setKey("my_project:root:inactive_module").setEnabled(false));
+    componentDb.insertComponent(newFileDto(module, null).setKey("my_project:root:module:src/File.xoo"));
+    componentDb.insertComponent(newFileDto(module, null).setKey("my_project:root:module:src/InactiveFile.xoo").setEnabled(false));
 
     BulkUpdateKeyWsResponse result = callByUuid(project.uuid(), FROM, TO);
 
@@ -141,111 +110,8 @@ public class BulkUpdateKeyActionTest {
       .containsExactly(
         tuple(project.key(), "your_project", false),
         tuple(module.key(), "your_project:root:module", false));
-
     verify(componentService).bulkUpdateKey(any(DbSession.class), eq(project.uuid()), eq(FROM), eq(TO));
-  }
-
-  @Test
-  public void bulk_update_provisioned_project_key() {
-    String newKey = "provisionedProject2";
-    ComponentDto provisionedProject = componentDb.insertProject();
-
-    callByKey(provisionedProject.key(), provisionedProject.getKey(), newKey);
-
-    verify(componentService).bulkUpdateKey(any(DbSession.class), eq(provisionedProject.uuid()), eq(provisionedProject.getKey()), eq(newKey));
-  }
-
-  @Test
-  public void fail_to_bulk_if_a_component_already_exists_with_the_same_key() {
-    componentDb.insertComponent(newProjectDto(db.getDefaultOrganization()).setKey("my_project"));
-    componentDb.insertComponent(newProjectDto(db.getDefaultOrganization()).setKey("your_project"));
-
-    expectedException.expect(BadRequestException.class);
-    expectedException.expectMessage("Impossible to update key: a component with key \"your_project\" already exists.");
-
-    callByKey("my_project", "my_", "your_");
-  }
-
-  @Test
-  public void fail_to_bulk_update_with_invalid_new_key() {
-    insertMyProject();
-
-    expectedException.expect(IllegalArgumentException.class);
-    expectedException.expectMessage("Malformed key for 'my?project'. Allowed characters are alphanumeric, '-', '_', '.' and ':', with at least one non-digit.");
-
-    callByKey(MY_PROJECT_KEY, FROM, "my?");
-  }
-
-  @Test
-  public void fail_to_dry_bulk_update_with_invalid_new_key() {
-    insertMyProject();
-
-    expectedException.expect(IllegalArgumentException.class);
-    expectedException.expectMessage("Malformed key for 'my?project'. Allowed characters are alphanumeric, '-', '_', '.' and ':', with at least one non-digit.");
-
-    callDryRunByKey(MY_PROJECT_KEY, FROM, "my?");
-  }
-
-  @Test
-  public void fail_to_bulk_update_if_not_project_or_module() {
-    ComponentDto project = insertMyProject();
-    ComponentDto file = componentDb.insertComponent(newFileDto(project, null));
-
-    expectedException.expect(IllegalArgumentException.class);
-    expectedException.expectMessage("Component updated must be a module or a key");
-
-    callByKey(file.key(), FROM, TO);
-  }
-
-  @Test
-  public void fail_if_from_string_is_not_provided() {
-    expectedException.expect(IllegalArgumentException.class);
-
-    ComponentDto project = insertMyProject();
-
-    callDryRunByKey(project.key(), null, TO);
-  }
-
-  @Test
-  public void fail_if_to_string_is_not_provided() {
-    expectedException.expect(IllegalArgumentException.class);
-
-    ComponentDto project = insertMyProject();
-
-    callDryRunByKey(project.key(), FROM, null);
-  }
-
-  @Test
-  public void fail_if_uuid_nor_key_provided() {
-    expectedException.expect(IllegalArgumentException.class);
-
-    call(null, null, FROM, TO, false);
-  }
-
-  @Test
-  public void fail_if_uuid_and_key_provided() {
-    expectedException.expect(IllegalArgumentException.class);
-
-    ComponentDto project = insertMyProject();
-
-    call(project.uuid(), project.key(), FROM, TO, false);
-  }
-
-  @Test
-  public void fail_if_project_does_not_exist() {
-    expectedException.expect(NotFoundException.class);
-
-    callDryRunByUuid("UNKNOWN_UUID", FROM, TO);
-  }
-
-  @Test
-  public void throw_ForbiddenException_if_not_project_administrator() {
-    userSession.logIn();
-    ComponentDto project = insertMyProject();
-
-    expectedException.expect(ForbiddenException.class);
-
-    callDryRunByUuid(project.uuid(), FROM, TO);
+    verify(action).handle(any(Request.class), any(Response.class));
   }
 
   @Test
@@ -259,26 +125,17 @@ public class BulkUpdateKeyActionTest {
       .hasSize(5)
       .extracting(WebService.Param::key)
       .containsOnlyOnce("projectId", "project", "from", "to", "dryRun");
+
+    assertThat(definition.description()).isEqualTo("See api/projects/bulk_update_key");
+    assertThat(definition.deprecatedSince()).isEqualTo("6.4");
   }
 
   private ComponentDto insertMyProject() {
     return componentDb.insertComponent(newProjectDto(db.organizations().insert()).setKey(MY_PROJECT_KEY));
   }
 
-  private WsComponents.BulkUpdateKeyWsResponse callDryRunByUuid(@Nullable String uuid, @Nullable String from, @Nullable String to) {
-    return call(uuid, null, from, to, true);
-  }
-
-  private BulkUpdateKeyWsResponse callDryRunByKey(@Nullable String key, @Nullable String from, @Nullable String to) {
-    return call(null, key, from, to, true);
-  }
-
   private WsComponents.BulkUpdateKeyWsResponse callByUuid(@Nullable String uuid, @Nullable String from, @Nullable String to) {
     return call(uuid, null, from, to, false);
-  }
-
-  private BulkUpdateKeyWsResponse callByKey(@Nullable String key, @Nullable String from, @Nullable String to) {
-    return call(null, key, from, to, false);
   }
 
   private BulkUpdateKeyWsResponse call(@Nullable String uuid, @Nullable String key, @Nullable String from, @Nullable String to, @Nullable Boolean dryRun) {
