@@ -86,11 +86,6 @@ public class ProjectReactorBuilder {
   private static final String PROPERTY_TESTS = ProjectDefinition.TESTS_PROPERTY;
 
   /**
-   * @since 6.4
-   */
-  private static final String ANALYZE_PARENT_MODULES_PROPERTY = "sonar.analyzeParentModules";
-
-  /**
    * Array of all mandatory properties required for a project without child.
    */
   private static final String[] MANDATORY_PROPERTIES_FOR_SIMPLE_PROJECT = {
@@ -338,21 +333,11 @@ public class ProjectReactorBuilder {
     if (project.getSubProjects().isEmpty()) {
       cleanAndCheckModuleProperties(project);
     } else {
-      if (!shouldAnalyzeParentModules(project)) {
-        cleanAndCheckAggregatorProjectProperties(project);
-      } else {
-        cleanAndCheckModuleProperties(project);
-      }
-
       // clean modules properties as well
       for (ProjectDefinition module : project.getSubProjects()) {
         cleanAndCheckProjectDefinitions(module);
       }
     }
-  }
-
-  public static boolean shouldAnalyzeParentModules(ProjectDefinition projectDefinition) {
-    return "true".equals(projectDefinition.properties().getOrDefault(ANALYZE_PARENT_MODULES_PROPERTY, ""));
   }
 
   @VisibleForTesting
@@ -362,26 +347,6 @@ public class ProjectReactorBuilder {
     // We need to check the existence of source directories
     String[] sourcePaths = getListFromProperty(properties, PROPERTY_SOURCES);
     checkExistenceOfPaths(project.getKey(), project.getBaseDir(), sourcePaths, PROPERTY_SOURCES);
-  }
-
-  @VisibleForTesting
-  protected static void cleanAndCheckAggregatorProjectProperties(ProjectDefinition project) {
-    Map<String, String> properties = project.properties();
-
-    // SONARPLUGINS-2295
-    String[] sourceDirs = getListFromProperty(properties, PROPERTY_SOURCES);
-    for (String path : sourceDirs) {
-      File sourceFolder = resolvePath(project.getBaseDir(), path);
-      if (sourceFolder.isDirectory()) {
-        LOG.warn("/!\\ A multi-module project can't have source folders, so '{}' won't be used for the analysis. " +
-          "If you want to analyse files of this folder, you should create another sub-module and move them inside it.",
-          sourceFolder.toString());
-      }
-    }
-
-    // "aggregator" project must not have the following properties:
-    properties.remove(PROPERTY_SOURCES);
-    properties.remove(PROPERTY_TESTS);
   }
 
   @VisibleForTesting
