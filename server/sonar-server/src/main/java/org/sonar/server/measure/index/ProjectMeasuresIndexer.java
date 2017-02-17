@@ -58,7 +58,7 @@ public class ProjectMeasuresIndexer extends BaseIndexer implements ProjectIndexe
 
   @Override
   protected long doIndex(long lastUpdatedAt) {
-    return doIndex(createBulkIndexer(false), lastUpdatedAt, null);
+    return doIndex(lastUpdatedAt, null);
   }
 
   @Override
@@ -69,7 +69,7 @@ public class ProjectMeasuresIndexer extends BaseIndexer implements ProjectIndexe
       case PROJECT_CREATION:
         // provisioned projects are supported by WS api/components/search_projects
       case NEW_ANALYSIS:
-        doIndex(createBulkIndexer(false), 0L, projectUuid);
+        doIndex(0L, projectUuid);
         break;
       default:
         // defensive case
@@ -86,14 +86,15 @@ public class ProjectMeasuresIndexer extends BaseIndexer implements ProjectIndexe
       .get();
   }
 
-  private long doIndex(BulkIndexer bulk, long lastUpdatedAt, @Nullable String projectUuid) {
+  private long doIndex(long lastUpdatedAt, @Nullable String projectUuid) {
     try (DbSession dbSession = dbClient.openSession(false);
       ProjectMeasuresIndexerIterator rowIt = ProjectMeasuresIndexerIterator.create(dbSession, lastUpdatedAt, projectUuid)) {
-      return doIndex(bulk, rowIt);
+      return doIndex(rowIt);
     }
   }
 
-  private static long doIndex(BulkIndexer bulk, Iterator<ProjectMeasures> docs) {
+  private long doIndex(Iterator<ProjectMeasures> docs) {
+    BulkIndexer bulk = new BulkIndexer(esClient, INDEX_PROJECT_MEASURES);
     bulk.start();
     long maxDate = 0L;
     while (docs.hasNext()) {
@@ -106,12 +107,6 @@ public class ProjectMeasuresIndexer extends BaseIndexer implements ProjectIndexe
     }
     bulk.stop();
     return maxDate;
-  }
-
-  private BulkIndexer createBulkIndexer(boolean large) {
-    BulkIndexer bulk = new BulkIndexer(esClient, INDEX_PROJECT_MEASURES);
-    bulk.setLarge(large);
-    return bulk;
   }
 
   private static IndexRequest newIndexRequest(ProjectMeasuresDoc doc) {
