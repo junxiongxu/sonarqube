@@ -50,6 +50,7 @@ import org.sonar.db.property.PropertyDto;
 import org.sonar.db.property.PropertyQuery;
 import org.sonar.db.qualitygate.QualityGateDto;
 import org.sonar.server.component.ComponentFinder;
+import org.sonar.server.permission.GlobalPermission;
 import org.sonar.server.qualitygate.QualityGateFinder;
 import org.sonar.server.qualityprofile.QPMeasureData;
 import org.sonar.server.qualityprofile.QualityProfile;
@@ -59,8 +60,8 @@ import org.sonar.server.user.UserSession;
 import static org.sonar.api.measures.CoreMetrics.QUALITY_PROFILES_KEY;
 import static org.sonar.api.web.UserRole.ADMIN;
 import static org.sonar.api.web.UserRole.USER;
-import static org.sonar.core.permission.GlobalPermissions.QUALITY_GATE_ADMIN;
-import static org.sonar.core.permission.GlobalPermissions.QUALITY_PROFILE_ADMIN;
+import static org.sonar.server.permission.GlobalPermission.ADMINISTER_QUALITY_GATES;
+import static org.sonar.server.permission.GlobalPermission.ADMINISTER_QUALITY_PROFILES;
 import static org.sonar.server.user.AbstractUserSession.insufficientPrivilegesException;
 import static org.sonar.server.ws.KeyExamples.KEY_PROJECT_EXAMPLE_001;
 
@@ -141,8 +142,8 @@ public class ComponentAction implements NavigationWsAction {
       writeProfiles(json, session, component);
       writeQualityGate(json, session, component);
       if (userSession.hasComponentPermission(ADMIN, component) ||
-        userSession.hasOrganizationPermission(org.getUuid(), QUALITY_PROFILE_ADMIN) ||
-        userSession.hasOrganizationPermission(org.getUuid(), QUALITY_GATE_ADMIN)) {
+        userSession.hasPermission(ADMINISTER_QUALITY_PROFILES, org) ||
+        userSession.hasPermission(ADMINISTER_QUALITY_GATES, org)) {
         writeConfiguration(json, component);
       }
       writeBreadCrumbs(json, session, component);
@@ -228,8 +229,8 @@ public class ComponentAction implements NavigationWsAction {
   private void writeConfigPageAccess(JsonWriter json, boolean isAdmin, ComponentDto component) {
     boolean isProject = Qualifiers.PROJECT.equals(component.qualifier());
     boolean showManualMeasures = isAdmin && !Qualifiers.DIRECTORY.equals(component.qualifier());
-    boolean isQualityProfileAdmin = userSession.hasOrganizationPermission(component.getOrganizationUuid(), QUALITY_PROFILE_ADMIN);
-    boolean isQualityGateAdmin = userSession.hasOrganizationPermission(component.getOrganizationUuid(), QUALITY_GATE_ADMIN);
+    boolean isQualityProfileAdmin = userSession.hasPermission(GlobalPermission.ADMINISTER_QUALITY_PROFILES, component.getOrganizationUuid());
+    boolean isQualityGateAdmin = userSession.hasPermission(GlobalPermission.ADMINISTER_QUALITY_GATES, component.getOrganizationUuid());
 
     json.prop("showSettings", isAdmin && componentTypeHasProperty(component, PROPERTY_CONFIGURABLE));
     json.prop("showQualityProfiles", isProject && (isAdmin || isQualityProfileAdmin));

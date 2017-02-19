@@ -32,9 +32,8 @@ import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.qualityprofile.QualityProfileDto;
 import org.sonar.server.organization.DefaultOrganizationProvider;
+import org.sonar.server.permission.GlobalPermission;
 import org.sonar.server.user.UserSession;
-
-import static org.sonar.core.permission.GlobalPermissions.QUALITY_PROFILE_ADMIN;
 
 public class AppAction implements RulesWsAction {
 
@@ -78,7 +77,7 @@ public class AppAction implements RulesWsAction {
   }
 
   private void addPermissions(JsonWriter json) {
-    boolean canWrite = userSession.hasOrganizationPermission(defaultOrganizationProvider.get().getUuid(), QUALITY_PROFILE_ADMIN);
+    boolean canWrite = userSession.hasPermission(GlobalPermission.ADMINISTER_QUALITY_PROFILES, defaultOrganizationProvider.get().getUuid());
     json.prop("canWrite", canWrite);
   }
 

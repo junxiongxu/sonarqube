@@ -29,7 +29,6 @@ import org.sonar.api.server.ws.WebService;
 import org.sonar.api.server.ws.WebService.Param;
 import org.sonar.api.utils.DateUtils;
 import org.sonar.api.utils.System2;
-import org.sonar.api.web.UserRole;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbTester;
 import org.sonar.db.component.ComponentDto;
@@ -214,12 +213,12 @@ public class GhostsActionTest {
       .isSimilarTo(Resources.getResource(getClass(), "projects-example-ghosts.json"));
   }
 
-  @Test(expected = ForbiddenException.class)
-  public void fail_if_does_not_have_sufficient_rights() throws Exception {
-    userSessionRule.logIn()
-      .addOrganizationPermission(db.getDefaultOrganization(), UserRole.USER)
-      .addOrganizationPermission(db.getDefaultOrganization(), UserRole.ISSUE_ADMIN)
-      .addOrganizationPermission(db.getDefaultOrganization(), UserRole.CODEVIEWER);
+  @Test
+  public void throws_ForbiddenException_if_not_administrator_of_organization() throws Exception {
+    userSessionRule.logIn();
+
+    expectedException.expect(ForbiddenException.class);
+    expectedException.expectMessage("Insufficient privileges");
 
     underTest.newRequest().execute();
   }
