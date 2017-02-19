@@ -34,7 +34,8 @@ import org.sonar.server.ws.TestResponse;
 import org.sonar.server.ws.WsActionTester;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.core.permission.GlobalPermissions.SYSTEM_ADMIN;
+import static org.sonar.server.permission.GlobalPermission.ADMINISTER;
+import static org.sonar.server.permission.GlobalPermission.PROVISION_PROJECTS;
 import static org.sonar.test.JsonAssert.assertJson;
 
 public class OrganizationActionTest {
@@ -76,8 +77,8 @@ public class OrganizationActionTest {
   public void verify_example() {
     OrganizationDto organization = dbTester.organizations().insert(dto -> dto.setGuarded(true));
     userSession.logIn()
-      .addOrganizationPermission(organization, "admin")
-      .addOrganizationPermission(organization, "provisioning");
+      .addPermission(ADMINISTER, organization)
+      .addPermission(PROVISION_PROJECTS, organization);
 
     TestResponse response = executeRequest(organization);
 
@@ -104,7 +105,7 @@ public class OrganizationActionTest {
   @Test
   public void returns_admin_and_canDelete_true_when_user_logged_in_and_admin_and_key_is_the_default_organization() {
     OrganizationDto defaultOrganization = dbTester.getDefaultOrganization();
-    userSession.logIn().addOrganizationPermission(defaultOrganization.getUuid(), "admin");
+    userSession.logIn().addPermission(ADMINISTER, defaultOrganization);
 
     TestResponse response = executeRequest(defaultOrganization);
 
@@ -132,7 +133,7 @@ public class OrganizationActionTest {
   @Test
   public void returns_admin_and_canDelete_true_when_user_logged_in_and_admin_and_key_is_not_the_default_organization() {
     OrganizationDto organization = dbTester.organizations().insert();
-    userSession.logIn().addOrganizationPermission(organization.getUuid(), "admin");
+    userSession.logIn().addPermission(ADMINISTER, organization);
 
     TestResponse response = executeRequest(organization);
 
@@ -142,7 +143,7 @@ public class OrganizationActionTest {
   @Test
   public void returns_admin_and_canDelete_false_when_user_logged_in_and_admin_and_key_is_guarded_organization() {
     OrganizationDto organization = dbTester.organizations().insert(dto -> dto.setGuarded(true));
-    userSession.logIn().addOrganizationPermission(organization.getUuid(), SYSTEM_ADMIN);
+    userSession.logIn().addPermission(ADMINISTER, organization);
 
     TestResponse response = executeRequest(organization);
 
@@ -164,7 +165,7 @@ public class OrganizationActionTest {
     // user can provision projects in org2 but not in org1
     OrganizationDto org1 = dbTester.organizations().insert();
     OrganizationDto org2 = dbTester.organizations().insert();
-    userSession.logIn().addOrganizationPermission(org2, "provisioning");
+    userSession.logIn().addPermission(PROVISION_PROJECTS, org2);
 
     verifyResponse(executeRequest(org1), false, false, false);
     verifyResponse(executeRequest(org2), false, true, false);

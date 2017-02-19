@@ -192,13 +192,13 @@ public class UserSessionRule implements TestRule, UserSession {
     return this;
   }
 
-  public UserSessionRule addOrganizationPermission(String organizationUuid, String permission) {
-    ensureAbstractMockUserSession().addOrganizationPermission(organizationUuid, permission);
+  public UserSessionRule addPermission(GlobalPermission permission, String organizationUuid) {
+    ensureAbstractMockUserSession().addPermission(permission, organizationUuid);
     return this;
   }
 
-  public UserSessionRule addOrganizationPermission(OrganizationDto organizationDto, String permission) {
-    ensureAbstractMockUserSession().addOrganizationPermission(organizationDto.getUuid(), permission);
+  public UserSessionRule addPermission(GlobalPermission permission, OrganizationDto organization) {
+    ensureAbstractMockUserSession().addPermission(permission, organization.getUuid());
     return this;
   }
 
@@ -293,6 +293,11 @@ public class UserSessionRule implements TestRule, UserSession {
   }
 
   @Override
+  public boolean hasPermission(GlobalPermission permission, OrganizationDto organization) {
+    return currentUserSession.hasPermission(permission, organization);
+  }
+
+  @Override
   public boolean hasPermission(GlobalPermission permission, String organizationUuid) {
     return currentUserSession.hasPermission(permission, organizationUuid);
   }
@@ -304,8 +309,9 @@ public class UserSessionRule implements TestRule, UserSession {
   }
 
   @Override
-  public boolean hasPermission(GlobalPermission permission, OrganizationDto organization) {
-    return currentUserSession.hasPermission(permission, organization);
+  public UserSession checkPermission(GlobalPermission permission, OrganizationDto organization) {
+    currentUserSession.checkPermission(permission, organization);
+    return this;
   }
 
   @Override
@@ -328,12 +334,6 @@ public class UserSessionRule implements TestRule, UserSession {
   @Override
   public UserSession checkIsSystemAdministrator() {
     currentUserSession.checkIsSystemAdministrator();
-    return this;
-  }
-
-  @Override
-  public UserSession checkPermission(GlobalPermission permission, OrganizationDto organization) {
-    currentUserSession.checkPermission(permission, organization);
     return this;
   }
 }

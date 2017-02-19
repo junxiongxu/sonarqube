@@ -175,7 +175,7 @@ public class ServerUserSessionTest {
 
     expectInsufficientPrivilegesForbiddenException();
 
-    newUserSession(NON_ROOT_USER_DTO).checkOrganizationPermission(org.getUuid(), PROVISIONING);
+    newUserSession(NON_ROOT_USER_DTO).checkPermission(GlobalPermission.PROVISION_PROJECTS, org);
   }
 
   @Test
@@ -184,14 +184,14 @@ public class ServerUserSessionTest {
     db.users().insertUser(NON_ROOT_USER_DTO);
     db.users().insertPermissionOnUser(org, NON_ROOT_USER_DTO, PROVISIONING);
 
-    newUserSession(NON_ROOT_USER_DTO).checkOrganizationPermission(org.getUuid(), PROVISIONING);
+    newUserSession(NON_ROOT_USER_DTO).checkPermission(GlobalPermission.PROVISION_PROJECTS, org);
   }
 
   @Test
   public void checkOrganizationPermission_succeeds_when_user_is_root() {
     OrganizationDto org = db.organizations().insert();
 
-    newUserSession(ROOT_USER_DTO).checkOrganizationPermission(org.getUuid(), PROVISIONING);
+    newUserSession(ROOT_USER_DTO).checkPermission(GlobalPermission.PROVISION_PROJECTS, org);
   }
 
   @Test

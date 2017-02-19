@@ -41,6 +41,17 @@ public abstract class AbstractMockUserSession<T extends AbstractMockUserSession>
     this.clazz = clazz;
   }
 
+  public T addPermission(GlobalPermission permission, String organizationUuid) {
+    permissionsByOrganizationUuid.put(organizationUuid, permission);
+    return clazz.cast(this);
+  }
+
+  @Override
+  protected boolean hasPermissionImpl(GlobalPermission permission, String organizationUuid) {
+    return permissionsByOrganizationUuid.get(organizationUuid).contains(permission);
+  }
+
+
   public T addProjectUuidPermissions(String projectPermission, String... projectUuids) {
     this.projectPermissionsCheckedByUuid.add(projectPermission);
     this.projectUuidByPermission.putAll(projectPermission, newArrayList(projectUuids));
@@ -57,11 +68,6 @@ public abstract class AbstractMockUserSession<T extends AbstractMockUserSession>
   }
 
   @Override
-  protected boolean hasPermissionImpl(GlobalPermission permission, String organizationUuid) {
-    return permissionsByOrganizationUuid.get(organizationUuid).contains(permission);
-  }
-
-  @Override
   protected Optional<String> componentUuidToProjectUuid(String componentUuid) {
     return Optional.ofNullable(projectUuidByComponentUuid.get(componentUuid));
   }
@@ -69,11 +75,6 @@ public abstract class AbstractMockUserSession<T extends AbstractMockUserSession>
   @Override
   protected boolean hasProjectUuidPermission(String permission, String projectUuid) {
     return projectPermissionsCheckedByUuid.contains(permission) && projectUuidByPermission.get(permission).contains(projectUuid);
-  }
-
-  public T addOrganizationPermission(String organizationUuid, String permission) {
-    permissionsByOrganizationUuid.put(organizationUuid, GlobalPermission.fromKey(permission));
-    return clazz.cast(this);
   }
 
   public T setSystemAdministrator(boolean b) {
