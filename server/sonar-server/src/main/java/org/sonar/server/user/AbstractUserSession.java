@@ -21,8 +21,10 @@ package org.sonar.server.user;
 
 import java.util.Optional;
 import org.sonar.db.component.ComponentDto;
+import org.sonar.db.organization.OrganizationDto;
 import org.sonar.server.exceptions.ForbiddenException;
 import org.sonar.server.exceptions.UnauthorizedException;
+import org.sonar.server.permission.GlobalPermission;
 
 public abstract class AbstractUserSession implements UserSession {
   private static final String INSUFFICIENT_PRIVILEGES_MESSAGE = "Insufficient privileges";
@@ -39,18 +41,38 @@ public abstract class AbstractUserSession implements UserSession {
 
   @Override
   public final boolean hasOrganizationPermission(String organizationUuid, String permission) {
-    return isRoot() || hasOrganizationPermissionImpl(organizationUuid, permission);
+    return hasPermission(GlobalPermission.fromKey(permission), organizationUuid);
   }
 
-  protected abstract boolean hasOrganizationPermissionImpl(String organizationUuid, String permission);
+  @Override
+  public final boolean hasPermission(GlobalPermission permission, OrganizationDto organization) {
+    return hasPermission(permission, organization.getUuid());
+  }
 
   @Override
-  public final UserSession checkOrganizationPermission(String organizationUuid, String permission) {
-    if (!hasOrganizationPermission(organizationUuid, permission)) {
+  public final boolean hasPermission(GlobalPermission permission, String organizationUuid) {
+    return isRoot() || hasPermissionImpl(permission, organizationUuid);
+  }
+
+  @Override
+  public final UserSession checkPermission(GlobalPermission permission, OrganizationDto organization) {
+    return checkPermission(permission, organization.getUuid());
+  }
+
+  @Override
+  public final UserSession checkPermission(GlobalPermission permission, String organizationUuid) {
+    if (!hasPermission(permission, organizationUuid)) {
       throw new ForbiddenException(INSUFFICIENT_PRIVILEGES_MESSAGE);
     }
     return this;
   }
+
+  @Override
+  public final UserSession checkOrganizationPermission(String organizationUuid, String permission) {
+    return checkPermission(GlobalPermission.fromKey(permission), organizationUuid);
+  }
+
+  protected abstract boolean hasPermissionImpl(GlobalPermission permission, String organizationUuid);
 
   @Override
   public final boolean hasComponentPermission(String permission, ComponentDto component) {
