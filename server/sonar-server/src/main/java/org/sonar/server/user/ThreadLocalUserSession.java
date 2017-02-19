@@ -138,20 +138,9 @@ public class ThreadLocalUserSession implements UserSession {
   }
 
   @Override
-  public UserSession checkOrganizationPermission(String organizationUuid, String permission) {
-    get().checkOrganizationPermission(organizationUuid, permission);
-    return this;
-  }
-
-  @Override
   public UserSession checkPermission(GlobalPermission permission, OrganizationDto organization) {
     get().checkPermission(permission, organization);
     return this;
-  }
-
-  @Override
-  public boolean hasOrganizationPermission(String organizationUuid, String permission) {
-    return get().hasOrganizationPermission(organizationUuid, permission);
   }
 
   @Override

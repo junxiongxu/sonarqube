@@ -92,18 +92,6 @@ public interface UserSession {
   UserSession checkPermission(GlobalPermission permission, String organizationUuid);
 
   /**
-   * @deprecated use #hasPermission(GlobalPermission, String)
-   */
-  @Deprecated
-  boolean hasOrganizationPermission(String organizationUuid, String permission);
-
-  /**
-   * @deprecated #checkPermission(GlobalPermission, String)
-   */
-  @Deprecated
-  UserSession checkOrganizationPermission(String organizationUuid, String permission);
-
-  /**
    * Returns {@code true} if the permission is granted to user on the component,
    * otherwise {@code false}.
    *
@@ -113,7 +101,6 @@ public interface UserSession {
    * component does not exist.
    *
    * If the permission is not granted, then the organization permission is _not_ checked.
-   * There's _no_ automatic fallback on {@link #hasOrganizationPermission(String, String)}.
    *
    * @param component non-null component.
    * @param permission project permission as defined by {@link org.sonar.core.permission.ProjectPermissions}

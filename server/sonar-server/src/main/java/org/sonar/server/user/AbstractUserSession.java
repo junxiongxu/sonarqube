@@ -40,11 +40,6 @@ public abstract class AbstractUserSession implements UserSession {
   }
 
   @Override
-  public final boolean hasOrganizationPermission(String organizationUuid, String permission) {
-    return hasPermission(GlobalPermission.fromKey(permission), organizationUuid);
-  }
-
-  @Override
   public final boolean hasPermission(GlobalPermission permission, OrganizationDto organization) {
     return hasPermission(permission, organization.getUuid());
   }
@@ -65,11 +60,6 @@ public abstract class AbstractUserSession implements UserSession {
       throw new ForbiddenException(INSUFFICIENT_PRIVILEGES_MESSAGE);
     }
     return this;
-  }
-
-  @Override
-  public final UserSession checkOrganizationPermission(String organizationUuid, String permission) {
-    return checkPermission(GlobalPermission.fromKey(permission), organizationUuid);
   }
 
   protected abstract boolean hasPermissionImpl(GlobalPermission permission, String organizationUuid);

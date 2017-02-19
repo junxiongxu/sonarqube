@@ -36,6 +36,7 @@ import org.sonar.db.user.UserDto;
 import org.sonar.server.exceptions.ForbiddenException;
 import org.sonar.server.organization.TestDefaultOrganizationProvider;
 import org.sonar.server.organization.TestOrganizationFlags;
+import org.sonar.server.permission.GlobalPermission;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonar.core.permission.GlobalPermissions.PROVISIONING;
@@ -194,61 +195,61 @@ public class ServerUserSessionTest {
   }
 
   @Test
-  public void test_hasOrganizationPermission_for_logged_in_user() {
+  public void test_hasPermission_on_organization_for_logged_in_user() {
     OrganizationDto org = db.organizations().insert();
     ComponentDto project = db.components().insertProject(org);
     db.users().insertPermissionOnUser(org, userDto, PROVISIONING);
     db.users().insertProjectPermissionOnUser(userDto, UserRole.ADMIN, project);
 
     UserSession session = newUserSession(userDto);
-    assertThat(session.hasOrganizationPermission(org.getUuid(), PROVISIONING)).isTrue();
-    assertThat(session.hasOrganizationPermission(org.getUuid(), SYSTEM_ADMIN)).isFalse();
-    assertThat(session.hasOrganizationPermission("another-org", PROVISIONING)).isFalse();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, org.getUuid())).isTrue();
+    assertThat(session.hasPermission(GlobalPermission.ADMINISTER, org.getUuid())).isFalse();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, "another-org")).isFalse();
   }
 
   @Test
-  public void test_hasOrganizationPermission_for_anonymous_user() {
+  public void test_hasPermission_on_organization_for_anonymous_user() {
     OrganizationDto org = db.organizations().insert();
     db.users().insertPermissionOnAnyone(org, PROVISIONING);
 
     UserSession session = newAnonymousSession();
-    assertThat(session.hasOrganizationPermission(org.getUuid(), PROVISIONING)).isTrue();
-    assertThat(session.hasOrganizationPermission(org.getUuid(), SYSTEM_ADMIN)).isFalse();
-    assertThat(session.hasOrganizationPermission("another-org", PROVISIONING)).isFalse();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, org.getUuid())).isTrue();
+    assertThat(session.hasPermission(GlobalPermission.ADMINISTER, org.getUuid())).isFalse();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, "another-org")).isFalse();
   }
 
   @Test
-  public void hasOrganizationPermission_keeps_cache_of_permissions_of_logged_in_user() {
+  public void hasPermission_on_organization_keeps_cache_of_permissions_of_logged_in_user() {
     OrganizationDto org = db.organizations().insert();
     db.users().insertPermissionOnUser(org, userDto, PROVISIONING);
 
     UserSession session = newUserSession(userDto);
 
     // feed the cache
-    assertThat(session.hasOrganizationPermission(org.getUuid(), PROVISIONING)).isTrue();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, org.getUuid())).isTrue();
 
     // change permissions without updating the cache
     db.users().deletePermissionFromUser(org, userDto, PROVISIONING);
     db.users().insertPermissionOnUser(org, userDto, SCAN_EXECUTION);
-    assertThat(session.hasOrganizationPermission(org.getUuid(), PROVISIONING)).isTrue();
-    assertThat(session.hasOrganizationPermission(org.getUuid(), SYSTEM_ADMIN)).isFalse();
-    assertThat(session.hasOrganizationPermission(org.getUuid(), SCAN_EXECUTION)).isFalse();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, org.getUuid())).isTrue();
+    assertThat(session.hasPermission(GlobalPermission.ADMINISTER, org.getUuid())).isFalse();
+    assertThat(session.hasPermission(GlobalPermission.SCAN, org.getUuid())).isFalse();
   }
 
   @Test
-  public void hasOrganizationPermission_keeps_cache_of_permissions_of_anonymous_user() {
+  public void hasPermission_on_organization_keeps_cache_of_permissions_of_anonymous_user() {
     OrganizationDto org = db.organizations().insert();
     db.users().insertPermissionOnAnyone(org, PROVISIONING);
 
     UserSession session = newAnonymousSession();
 
     // feed the cache
-    assertThat(session.hasOrganizationPermission(org.getUuid(), PROVISIONING)).isTrue();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, org.getUuid())).isTrue();
 
     // change permissions without updating the cache
     db.users().insertPermissionOnAnyone(org, SCAN_EXECUTION);
-    assertThat(session.hasOrganizationPermission(org.getUuid(), PROVISIONING)).isTrue();
-    assertThat(session.hasOrganizationPermission(org.getUuid(), SCAN_EXECUTION)).isFalse();
+    assertThat(session.hasPermission(GlobalPermission.PROVISION_PROJECTS, org.getUuid())).isTrue();
+    assertThat(session.hasPermission(GlobalPermission.SCAN, org.getUuid())).isFalse();
   }
 
   @Test

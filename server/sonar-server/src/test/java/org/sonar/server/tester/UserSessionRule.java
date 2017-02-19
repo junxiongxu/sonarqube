@@ -304,11 +304,6 @@ public class UserSessionRule implements TestRule, UserSession {
   }
 
   @Override
-  public boolean hasOrganizationPermission(String organizationUuid, String permission) {
-    return currentUserSession.hasOrganizationPermission(organizationUuid, permission);
-  }
-
-  @Override
   public boolean hasPermission(GlobalPermission permission, OrganizationDto organization) {
     return currentUserSession.hasPermission(permission, organization);
   }
@@ -333,12 +328,6 @@ public class UserSessionRule implements TestRule, UserSession {
   @Override
   public UserSession checkIsSystemAdministrator() {
     currentUserSession.checkIsSystemAdministrator();
-    return this;
-  }
-
-  @Override
-  public UserSession checkOrganizationPermission(String organizationUuid, String permission) {
-    currentUserSession.checkOrganizationPermission(organizationUuid, permission);
     return this;
   }
 
