@@ -248,6 +248,20 @@ public class ProjectMeasuresIndexTest {
   }
 
   @Test
+  public void filter_on_languages() {
+    ComponentDto project4 = newProjectDto(ORG).setUuid("Project-4").setName("Project 4").setKey("key-4");
+    index(
+      newDoc(PROJECT1).setLanguages(ImmutableMap.of("java", 6)),
+      newDoc(PROJECT2).setLanguages(ImmutableMap.of("xoo", 8)),
+      newDoc(PROJECT3).setLanguages(ImmutableMap.of("xoo", 18)),
+      newDoc(project4).setLanguages(ImmutableMap.of("<null>", 10, "java", 2, "xoo", 12)));
+
+    assertResults(new ProjectMeasuresQuery().setLanguages(newHashSet("java", "xoo")), PROJECT1, PROJECT2, PROJECT3, project4);
+    assertResults(new ProjectMeasuresQuery().setLanguages(newHashSet("java")), PROJECT1,project4);
+    assertResults(new ProjectMeasuresQuery().setLanguages(newHashSet("unknown")));
+  }
+
+  @Test
   public void filter_on_ids() {
     index(
       newDoc(PROJECT1),
@@ -933,6 +947,12 @@ public class ProjectMeasuresIndexTest {
       entry("java", 21L),
       entry("xoo", 30L),
       entry("xml", 4L));
+  }
+
+  // TODO
+  @Test
+  public void facet_languages_is_sticky() {
+
   }
 
   @Test
